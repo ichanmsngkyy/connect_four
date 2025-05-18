@@ -53,7 +53,8 @@ class Board
   end
 
   def winner?
-    false if @board.nil? || @board.empty?
+    return false if @board.nil? || @board.empty?
+
     check_horizontal_win? || check_vertical_win? || check_diagonal_win?
   end
 
@@ -63,10 +64,6 @@ class Board
 
   def draw?
     full? && !winner?
-  end
-
-  def get_board_state
-    @board.map(&:dup)
   end
 
   private
