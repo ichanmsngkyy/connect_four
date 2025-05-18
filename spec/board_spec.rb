@@ -22,7 +22,7 @@ describe Board do
         |⚪|⚪|⚪|⚪|⚪|⚪|⚪|
         |⚪|⚪|⚪|⚪|⚪|⚪|⚪|
         |⚪|⚪|⚪|⚪|⚪|⚪|⚪|
-        |⚪|⚪|⚪|⚪🟡🟡🟡🟡🟡🟡|⚪|⚪|⚪|
+        |⚪|⚪|⚪|⚪|⚪|⚪|⚪|
         ---------------
           1  2  3  4  5  6  7#{' '}
       BOARD
@@ -81,6 +81,87 @@ describe Board do
     it 'returns false for a full column' do
       6.times { board.place_piece(1, :red) }
       expect(board.place_piece(1, :yellow)).to be false
+    end
+  end
+
+  describe '#winner?' do
+    it 'returns false for an empty board' do
+      expect(board.winner?).to be false
+    end
+
+    it 'returns false for a partially filled board with no wins' do
+      board.place_piece(1, :red)
+      board.place_piece(2, :yellow)
+      expect(board.winner?).to be false
+    end
+
+    context 'horizontal wins' do
+      it 'returns true for four consecutive red places in a row' do
+        (1..4).each { |col| board.place_piece(col, :red) }
+        expect(board.winner?).to be true
+      end
+
+      it 'returns true for four consecutive yellow places in a row' do
+        (1..4).each { |col| board.place_piece(col, :yellow) }
+        expect(board.winner?).to be true
+      end
+    end
+
+    context 'vertical wins' do
+      it 'returns true for four consecutive red places in a column' do
+        4.times { board.place_piece(1, :red) }
+        expect(board.winner?).to be true
+      end
+
+      it 'returns true for four consecutive yellow places in a column' do
+        4.times { board.place_piece(3, :yellow) }
+        expect(board.winner?).to be true
+      end
+    end
+
+    context 'diagonal wins' do
+      it 'detects left-to-right diagonal wins (\)' do
+        (0..3).each do |offset|
+          (offset + 1).times { board.place_piece(offset + 1, :red) }
+        end
+      end
+
+      it 'detects right-to-left diagonal wins (/)' do
+        (0..3).each do |offset|
+          (offset + 1).times { board.place_piece(7 - offset, :yellow) }
+        end
+        expect(board.winner?).to be true
+      end
+    end
+  end
+
+  describe '#draw?' do
+    it 'returns false for an empty board' do
+      expect(board.draw?).to be false
+    end
+
+    it 'returns false when the board is not full' do
+      board.place_piece(1, :red)
+      expect(board.draw?).to be false
+    end
+
+    it 'returns true when the board is full and no winner' do
+      moves = [
+        [1, :yellow], [2, :red], [3, :red], [4, :yellow], [5, :red], [6, :yellow], [7, :red],
+        [7, :yellow], [6, :red], [5, :yellow], [4, :yellow], [3, :red], [2, :yellow], [1, :yellow],
+        [1, :red], [2, :red], [3, :yellow], [4, :red], [5, :yellow], [6, :yellow], [7, :red],
+        [7, :yellow], [6, :red], [5, :yellow], [4, :red], [3, :yellow], [2, :yellow], [1, :yellow],
+        [5, :red], [4, :red], [3, :red], [2, :yellow], [1, :red], [6, :yellow], [7, :red],
+        [7, :yellow], [6, :red], [5, :yellow], [4, :yellow], [3, :red], [2, :red], [1, :yellow]
+      ]
+
+      moves.each { |col, color| board.place_piece(col, color) }
+
+      board.print_board # Debugging step
+      puts "Winner detected? #{board.winner?}" # Should be nil
+      puts "Board full? #{board.full?}" # Should be true
+
+      expect(board.draw?).to be true
     end
   end
 end
