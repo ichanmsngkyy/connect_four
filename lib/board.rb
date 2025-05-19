@@ -23,10 +23,8 @@ class Board
       puts
     end
 
-    # Create divider line based on board width
     puts '-' * (2 * @board.first.length + 1)
 
-    # Create column numbers based on board width
     print ' '
     (1..@board.first.length).each do |i|
       printf(" #{i} ")
@@ -42,7 +40,7 @@ class Board
       next unless @board[row][col_index].nil?
 
       @board[row][col_index] = color
-      return winner?
+      return true
     end
     false
   end
@@ -53,13 +51,11 @@ class Board
   end
 
   def winner?
-    return false if @board.nil? || @board.empty?
-
     check_horizontal_win? || check_vertical_win? || check_diagonal_win?
   end
 
   def full?
-    @board.flatten.none?(&:nil?)
+    @board.flatten.all? { |cell| !cell.nil? }
   end
 
   def draw?
@@ -72,61 +68,38 @@ class Board
     !@board[0][col_index].nil?
   end
 
-  def check_diagonal_win?
-    check_left_to_right_diagonal? || check_right_to_left_diagonal?
+  def consecutive_four?(array)
+    return false if array.size < 4
+
+    array.each_cons(4).any? { |window| window.uniq.size == 1 && !window.include?(nil) }
   end
 
   def check_horizontal_win?
-    @board.each do |row|
-      next if row.compact.empty?
-
-      (0..row.length - 4).each do |col|
-        window = row[col, 4]
-        next if window.any?(&:nil?)
-
-        return true if window.uniq.size == 1
-      end
-    end
-    false
+    @board.any? { |row| consecutive_four?(row) }
   end
 
   def check_vertical_win?
-    @board.transpose.each do |column|
-      next if column.compact.empty?
-
-      (0..column.length - 4).each do |row|
-        window = column[row, 4]
-        next if window.any?(&:nil?)
-
-        return true if window.uniq.size == 1
-      end
-    end
-    false
+    @board.transpose.any? { |column| consecutive_four?(column) }
   end
 
-  def check_left_to_right_diagonal?
-    (0..@board.length - 4).each do |start_row|
-      (0..@board[0].length - 4).each do |start_col|
-        window = []
-        4.times do |i|
-          window << @board[start_row + i][start_col + i]
-        end
-        next if window.any?(&:nil?)
-        return true if window.uniq.size == 1
-      end
-    end
-    false
+  def check_diagonal_win?
+    diagonals_left_to_right.any? { |diagonal| consecutive_four?(diagonal) } ||
+      diagonals_right_to_left.any? { |diagonal| consecutive_four?(diagonal) }
   end
 
-  def check_right_to_left_diagonal?
-    (0..@board.length - 4).each do |start_row|
-      (3..@board[0].length - 4).each do |start_col|
-        window = []
-        4.times { |i| window << @board[start_row + i][start_col + i] }
-        next if window.any?(&:nil?)
-        return true if window.uniq.size == 1
+  def diagonals_left_to_right
+    (0..@board.length - 4).flat_map do |row|
+      (0..@board[0].length - 4).map do |col|
+        (0..3).map { |i| @board[row + i][col + i] }
       end
     end
-    false
+  end
+
+  def diagonals_right_to_left
+    (0..@board.length - 4).flat_map do |row|
+      (0..@board[0].length - 4).map do |col|
+        (0..3).map { |i| @board[row + i][col + 3 - i] }
+      end
+    end
   end
 end

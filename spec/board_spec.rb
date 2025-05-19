@@ -3,8 +3,6 @@
 require_relative '../lib/board'
 
 describe Board do
-  attr_reader :board
-
   subject(:board) { described_class.new }
 
   describe '#initialize' do
@@ -47,7 +45,6 @@ describe Board do
   end
 
   describe '#place_piece' do
-    let(:board) { described_class.new }
     it 'places a piece at the bottom of an empty column' do
       board.place_piece(1, :red)
       board.place_piece(1, :yellow)
@@ -65,6 +62,15 @@ describe Board do
     it 'returns for invalid columns' do
       expect(board.place_piece(0, :red)).to be false
       expect(board.place_piece(9, :yellow)).to be false
+    end
+
+    it 'returns true when a piece is placed' do
+      expect(board.place_piece(1, :red)).to be true
+    end
+
+    it 'returns false for an invalid move' do
+      expect(board.place_piece(0, :red)).to be false
+      expect(board.place_piece(8, :yellow)).to be false
     end
   end
 
@@ -84,54 +90,48 @@ describe Board do
     end
   end
 
+  describe '#consecutive_four?' do
+    it 'returns true for four consecutive pieces of the same color' do
+      array = %i[red red red red]
+      expect(board.send(:consecutive_four?, array)).to be true
+    end
+
+    it 'returns false if pieces are mixed' do
+      array = %i[red yellow red red]
+      expect(board.send(:consecutive_four?, array)).to be false
+    end
+
+    it 'returns false if there is a gap' do
+      array = [:red, nil, :red, :red]
+      expect(board.send(:consecutive_four?, array)).to be false
+    end
+  end
+
   describe '#winner?' do
-    it 'returns false for an empty board' do
+    it 'returns false when no winner is present' do
       expect(board.winner?).to be false
     end
 
-    it 'returns false for a partially filled board with no wins' do
-      board.place_piece(1, :red)
-      board.place_piece(2, :yellow)
-      expect(board.winner?).to be false
+    it 'returns true when a horizontal win is detected' do
+      (1..4).each { |col| board.place_piece(col, :red) }
+      expect(board.winner?).to be true
     end
 
-    context 'horizontal wins' do
-      it 'returns true for four consecutive red places in a row' do
-        (1..4).each { |col| board.place_piece(col, :red) }
-        expect(board.winner?).to be true
-      end
+    it 'returns true when a vertical win is detected' do
+      4.times { board.place_piece(1, :yellow) }
+      expect(board.winner?).to be true
+    end
+  end
 
-      it 'returns true for four consecutive yellow places in a row' do
-        (1..4).each { |col| board.place_piece(col, :yellow) }
-        expect(board.winner?).to be true
-      end
+  describe 'diagonal wins' do
+    it 'returns true for left-to-right diagonal wins (\)' do
+      (0..3).each { |offset| (offset + 1).times { board.place_piece(offset + 1, :red) } }
+      expect(board.winner?).to be true
     end
 
-    context 'vertical wins' do
-      it 'returns true for four consecutive red places in a column' do
-        4.times { board.place_piece(1, :red) }
-        expect(board.winner?).to be true
-      end
-
-      it 'returns true for four consecutive yellow places in a column' do
-        4.times { board.place_piece(3, :yellow) }
-        expect(board.winner?).to be true
-      end
-    end
-
-    context 'diagonal wins' do
-      it 'detects left-to-right diagonal wins (\)' do
-        (0..3).each do |offset|
-          (offset + 1).times { board.place_piece(offset + 1, :red) }
-        end
-      end
-
-      it 'detects right-to-left diagonal wins (/)' do
-        (0..3).each do |offset|
-          (offset + 1).times { board.place_piece(7 - offset, :yellow) }
-        end
-        expect(board.winner?).to be true
-      end
+    it 'returns true for right-to-left diagonal wins (/)' do
+      (0..3).each { |offset| (offset + 1).times { board.place_piece(7 - offset, :yellow) } }
+      expect(board.winner?).to be true
     end
   end
 
@@ -147,7 +147,7 @@ describe Board do
 
     it 'returns true when the board is full and no winner' do
       moves = [
-        [1, :yellow], [2, :red], [3, :red], [4, :yellow], [5, :red], [6, :yellow], [7, :red],
+        [1, :yellow], [2, :red], [3, :yellow], [4, :red], [5, :red], [6, :yellow], [7, :red],
         [7, :yellow], [6, :red], [5, :yellow], [4, :yellow], [3, :red], [2, :yellow], [1, :yellow],
         [1, :red], [2, :red], [3, :yellow], [4, :red], [5, :yellow], [6, :yellow], [7, :red],
         [7, :yellow], [6, :red], [5, :yellow], [4, :red], [3, :yellow], [2, :yellow], [1, :yellow],
@@ -157,9 +157,12 @@ describe Board do
 
       moves.each { |col, color| board.place_piece(col, color) }
 
-      board.print_board # Debugging step
-      puts "Winner detected? #{board.winner?}" # Should be nil
-      puts "Board full? #{board.full?}" # Should be true
+      board.print_board
+      puts "Winner detected? #{board.winner?}"
+      puts "Board full? #{board.full?}"
+      puts "Horizontal win detected? #{board.send(:check_horizontal_win?)}"
+      puts "Horizontal win detected? #{board.send(:check_vertical_win?)}"
+      puts "Horizontal win detected? #{board.send(:check_diagonal_win?)}"
 
       expect(board.draw?).to be true
     end

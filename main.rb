@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'lib/board'
+require_relative 'lib/game'
+require_relative 'lib/player'
 
-board = Board.new
-board.print_board
-(1..7).each { |col| 6.times { board.place_piece(col, col.odd? ? :red : :yellow) } }
-board.print_board  # Verify board is fully filled
-puts board.winner? # Ensure this returns false
-puts board.draw?   # Expected: true
+game = Game.new('Player 1', 'Player 2')
+game.play
